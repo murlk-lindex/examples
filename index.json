@@ -1,0 +1,14 @@
+{
+  "schema": "murlk-index/1",
+  "base": "https://raw.githubusercontent.com/murlk-lindex/examples/main/",
+  "names": ["demo_hello"],
+  "packages": {
+    "demo_hello": {
+      "latest": "0.1.0",
+      "versions": ["0.1.0"],
+      "platforms": ["win-x64", "linux-x64", "darwin-arm64"],
+      "path": "packages/demo_hello/0.1.0",
+      "home": "https://github.com/murlk-lindex/examples"
+    }
+  }
+}
