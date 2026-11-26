@@ -1,0 +1,11 @@
+# contract (ASCII twin of 契约.txt)
+name: demo_hello
+version: 0.1.0
+platforms: win-x64, linux-x64, darwin-arm64
+license: Apache-2.0
+
+## entry
+  mod.mu
+
+## exports
+#  pure .mu sample — no C-ABI binary required

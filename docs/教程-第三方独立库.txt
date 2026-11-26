@@ -1,0 +1,325 @@
+════════════════════════════════════════════════════════════════
+murlk 第三方独立库开发教科书
+版本 1.1 · 权威入口
+════════════════════════════════════════════════════════════════
+
+两类库（全书钉死，勿混称）：
+
+  标准库　　　　语言自带，随发行提供；目录 stdlib/{eng,zh,bagua}/…
+  第三方独立库　外部人员开发的独立包；经 mum 发布/安装；不进标准库目录冒充自带
+
+本书只讲第三方独立库。读完并能跟做：建库 → 填契约 → 发布 → 安装 → 进索引。
+不要猜布局、不要猜命令、不要猜链接。
+
+────────────────────────────────────────────────────────────────
+第 0 章　地图与权威文件
+────────────────────────────────────────────────────────────────
+
+  命令手册　　docs/guide/命令-mum.txt
+  标准库闸　　stdlib/eng/ffi/契约.txt
+  本夹契约　　stdlib/libdev/契约.txt
+  空骨架　　　stdlib/libdev/TEMPLATE/
+  登记样例　　stdlib/registry/packages/hello_bin/0.1.0/
+  总索引源　　stdlib/registry/index.txt
+  拉取链接表　stdlib/registry/mirrors.mu
+  mum 实现　　bin/mum.mu（本仓只用 .mu）
+  工业未完账　docs/notes/mum工业级_未完_v1.txt
+
+  口径（全书通用）
+    · 标准库 ≠ 第三方独立库；说法分开。
+    · 公网总仓 ≠ 语言源码仓：总仓只发布一个 index.txt（一行一个 https URL）。
+    · 用方默认只拉这一份 txt，再按行访问各家；不必为每个库改 mirror。
+    · URL 全网 https，不限 GitHub（Gitee/GitLab/自建/CDN 均可）。
+    · 本仓正式实现（含 mum、标准库）只用 .mu。
+    · 第三方独立库源语言不限；交付面只能是 C-ABI 二进制 + 契约 + 可选薄 mod.mu。
+    · 禁止 Python/JVM 高层 API、解释器嵌入当正式调用面。
+
+────────────────────────────────────────────────────────────────
+第 1 章　你要交付的包长什么样
+────────────────────────────────────────────────────────────────
+
+1.1 目录（验收外形）
+
+  <name>/
+    契约.txt                 必填
+    mod.mu                   推荐（薄绑定；纯 .mu 库则为主代码）
+    meta.mu                  推荐（deps / platforms / artifacts）
+    bin/<platform>/          外语言库必填；纯 .mu 库可空
+      <name>.dll
+      lib<name>.so
+      lib<name>.dylib
+
+1.2 平台名（钉死，勿自造）
+
+  win-x64
+  linux-x64
+  darwin-arm64
+  darwin-x64
+
+1.3 契约.txt 最小完整例
+
+  # 契约
+  name: mylib
+  version: 0.1.0
+  platforms: win-x64, linux-x64, darwin-arm64
+
+  ## 公开入口
+    mod.mu
+
+  ## exports
+    mylib_add  args:[i32,i32]  ret:i32
+
+  说明
+    · name / version 与目录、索引登记必须一致。
+    · exports 与二进制导出符一一对应；运行时只走 ffi_invoke。
+
+1.4 meta.mu 职责
+
+  提供：
+    pkg_meta_name / pkg_meta_version / pkg_meta_deps
+    pkg_meta_platforms / pkg_meta_artifacts
+  deps 写法（字符串列表，供 mum 传递安装）：
+    return ["otherlib 1.0.0"]
+  空依赖：
+    return []
+
+1.5 对照抄写
+
+  空骨架　stdlib/libdev/TEMPLATE/
+  登记样例　stdlib/registry/packages/hello_bin/0.1.0/
+
+────────────────────────────────────────────────────────────────
+第 2 章　环境与 mum
+────────────────────────────────────────────────────────────────
+
+2.1 必备
+
+  仓库根存在：
+    bin\murlk.exe
+    bin\mum.cmd
+    bin\mum.mu
+
+2.2 环境变量
+
+  MURLK_FRONTEND　仓库根（mum.cmd 未设时会自填）
+  MURLK_HOME　　　默认 %USERPROFILE%\.murlk
+
+2.3 自检
+
+  mum help
+  mum config
+  mum status
+  mum mirror list
+
+  mirror list 必须能看到：
+    · 1 条 local → …/stdlib/registry/index.txt
+    · 多条 builtin-oss（GitHub / jsDelivr / Gitee / GitLab / ghproxy 等）
+
+  没有链接就不能拉。mum 不会隔空取包。
+
+────────────────────────────────────────────────────────────────
+第 3 章　纯 .mu 的第三方独立库（跟做）
+────────────────────────────────────────────────────────────────
+
+  这是第三方独立库，不是标准库。不要放进 stdlib/{eng,zh,bagua}/。
+
+  mum init demo_mu 0.1.0
+  cd demo_mu
+
+  编辑 mod.mu（英文面，完整函数，勿单字母乱飞）。
+  契约.txt 已由 init 生成；核对 name/version。
+  bin/ 可空。
+
+  mum publish .
+  mum install demo_mu
+  mum list
+  mum info demo_mu
+
+  通过标准：info 打出契约，list 出现 demo_mu 与版本。
+
+────────────────────────────────────────────────────────────────
+第 4 章　用其他语言实现的第三方独立库（跟做）
+────────────────────────────────────────────────────────────────
+
+4.1 在你自己的工具链里
+
+  用 C / C++ / Rust / Go / Zig / … 编出 C-ABI 动态库。
+  源码不必进标准库目录。mum 只要二进制与契约（第三方独立库交付面）。
+
+4.2 放入包
+
+  mum init demo_ffi 0.1.0
+  cd demo_ffi
+
+  放置：
+    bin/win-x64/demo_ffi.dll
+    bin/linux-x64/libdemo_ffi.so
+    …
+
+  契约.txt 写清 exports（符号、参数型、返回型）。
+
+4.3 薄绑定 mod.mu
+
+  只允许：
+    import 后 ffi_invoke(已装二进制路径约定, 符号, args, tys, ret)
+  禁止：
+    嵌 CPython / JNI 对象面 / 脚本解释器当正式 API
+
+  细则：stdlib/eng/ffi/契约.txt
+
+4.4 发布与验收
+
+  mum publish .
+  mum install demo_ffi
+  mum verify demo_ffi
+  mum info demo_ffi
+
+────────────────────────────────────────────────────────────────
+第 5 章　项目依赖与传递依赖
+────────────────────────────────────────────────────────────────
+
+5.1 工程根 murlk.lib
+
+  一行一个坐标：
+
+    demo_mu 0.1.0
+    demo_ffi 0.1.0
+
+  然后：
+
+    mum deps
+
+5.2 传递依赖与版本范围
+
+  deps.txt / 契约 deps / 工程 murlk.lib 均可写：
+
+    otherlib 1.2.3
+    otherlib ^1.2.0
+    otherlib ~1.2.0
+    otherlib >=1.0.0
+    otherlib =1.2.3
+
+  mum install / mum deps 会解析并安装满足条件的最高版本。
+  循环依赖视为错误，须在发库前拆掉。
+
+5.3 锁与校验
+
+  安装后可写/更新：
+    ~/.murlk/murlk.lock
+  格式：
+    name version sha256
+  校验：
+    mum verify [name]
+  sha256 针对包内 契约.txt+mod.mu 拼接正文（工业基线；二进制另见 artifacts）。
+
+────────────────────────────────────────────────────────────────
+第 6 章　总索引与拉取
+────────────────────────────────────────────────────────────────
+
+6.1 公网总仓（电话簿）
+
+  整个仓库业务上只有：index.txt
+  格式：一行一个 https URL（# 注释可有）
+  语言源码不上总仓。
+  编辑源（开发机）：stdlib/registry/index.txt
+  建仓：docs/guide/GitHub总仓-建仓步骤.txt
+
+6.2 用方日常（只需这一份）
+
+  mum fetch
+  mum search <关键字>
+  mum install <name> [ver]
+
+  不必为每个作者 mirror add。
+
+6.3 镜像表
+
+  stdlib/registry/mirrors.mu → 只指向总索引 index.txt 的全网镜像
+
+────────────────────────────────────────────────────────────────
+第 7 章　自己建仓 + 往 index.txt 追加一行
+────────────────────────────────────────────────────────────────
+
+  权威：docs/guide/第三方独立库-自建仓发布.txt
+
+  1. 自己任意主机放包 + 可 GET 的 index.json（或嵌套 txt）
+  2. 向总仓 index.txt 提 PR，追加一行你的 https URL
+  3. 合入后：mum fetch 即可见
+
+  本地联调：mum publish . → mum install <名>
+
+────────────────────────────────────────────────────────────────
+第 8 章　平台 classifier
+────────────────────────────────────────────────────────────────
+
+  mum 安装外语言库时，优先保留/核验当前主机平台目录：
+
+    win-x64 / linux-x64 / darwin-arm64 / darwin-x64
+
+  主机平台由环境 MURLK_PLAT 可覆盖；未设时 mum 按 OS 探测默认。
+  artifacts 路径写在 meta.mu 的 pkg_meta_artifacts() 中，与 bin/ 一致。
+
+────────────────────────────────────────────────────────────────
+第 9 章　TEMP：贴到外部开源项目站的演示
+────────────────────────────────────────────────────────────────
+
+  仅当需要把「如何产出可供 mum 安装的 C-ABI」贴到别人家仓库/站点时：
+    · 可用他语写示例代码
+    · 文件头必须标记：TEMP_EXTERNAL_OSS_EXAMPLE
+    · 演示结束必须删除
+
+  那是给「第三方独立库作者」看步骤，不是让别的语言生态来消费 murlk 包，
+  也不是往标准库里塞东西。
+
+────────────────────────────────────────────────────────────────
+第 10 章　验收清单（发库前自测）
+────────────────────────────────────────────────────────────────
+
+  [ ] 契约.txt 含 name / version / platforms / exports（若有二进制）
+  [ ] 纯 .mu：mod.mu 可运行意图清晰；bin 可空
+  [ ] 外语言：bin/<platform>/ 下有对应动态库
+  [ ] mum publish . 成功
+  [ ] mum install <name> 成功
+  [ ] mum verify <name> 成功（若已写锁/sha）
+  [ ] mum info <name> 打出契约
+  [ ] 若有 deps：mum deps 能装全
+  [ ] 若 PR：总仓 index.txt 已追加你的 URL；复验 mum fetch && mum install
+
+────────────────────────────────────────────────────────────────
+第 11 章　命令速查
+────────────────────────────────────────────────────────────────
+
+  mum help | config | status
+  mum mirror list | add <url> | remove <url> | update
+  mum fetch | refresh | search <q>
+  mum init <name> [ver]
+  mum publish [dir]
+  mum install|i <name> [ver] | mum install <dir>
+  mum uninstall|rm <name>
+  mum list | info <name> | verify [name]
+  mum deps | outdated | update [name]
+  mum source list | add <n> <owner> [plat]
+  mum registry | registry set <url>
+
+  完整语义以 docs/guide/命令-mum.txt 为准。
+
+────────────────────────────────────────────────────────────────
+第 12 章　常见失败
+────────────────────────────────────────────────────────────────
+
+  · package not found
+      先 mum fetch；mum mirror list 确认有链接；
+      或 mum install ./本地包目录；或先 mum publish。
+  · missing 契约.txt
+      从 TEMPLATE 复制或 mum init，勿手建空夹。
+  · ffi 调不通
+      查 exports 符号是否与二进制一致；查 bin/<platform> 是否匹配主机。
+  · verify 失败
+      重装后勿手改已装目录；或更新锁：再 install 一次。
+  · 远程全 fail
+      属镜像暂不可达；local index.txt 仍应成功。换网即可。
+
+════════════════════════════════════════════════════════════════
+完
+下一步实践：第 3 章跑通，再第 4 章；PR 走第 7 章。
+════════════════════════════════════════════════════════════════

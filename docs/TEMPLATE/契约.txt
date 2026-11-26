@@ -1,0 +1,10 @@
+# 契约
+name: mylib
+version: 0.1.0
+platforms: win-x64, linux-x64, darwin-arm64
+
+## 公开入口
+  mod.mu
+
+## exports（外语言库：C-ABI 符号须与此一致；纯 .mu 可只列 mu 入口）
+#  mylib_add  args:[i32,i32]  ret:i32

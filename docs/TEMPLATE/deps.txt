@@ -1,0 +1,3 @@
+# one dependency per line: name version
+# example:
+# otherlib 1.0.0

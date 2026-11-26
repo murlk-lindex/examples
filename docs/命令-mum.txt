@@ -1,0 +1,116 @@
+类型: 用法（命令）
+权威级: 操作入口
+上位: docs/design/Murlk_统一总设计书_v7.0.txt
+
+# mum 库管理命令（独立顶层）
+# 对应: mum help
+# 注意: 非 murlk 子命令，请使用 mum.exe / mum，勿用 murlk mum
+#
+# 口径（钉死）：
+#   · 标准库 = 语言自带（stdlib/{eng,zh,bagua}）
+#   · 第三方独立库 = 外部人员开发；mum 负责其发布/安装/索引
+#   · 本仓工具与实现只用 .mu（mum 亦然）
+#   · 第三方独立库教科书：stdlib/libdev/教程-第三方独立库.txt
+#   · 公网总仓：只放 index.txt（一行一个 URL；不上语言源码）
+#   · 总仓建法：docs/guide/GitHub总仓-建仓步骤.txt（建议 murlk-lindex/hub）
+#   · 别人登记：往 index.txt 追加一行自己的 https URL
+#   · 用方默认只 fetch 总索引 txt；不必为每个库改 mirror
+#   · 依赖版本支持：精确 / ^ / ~ / >= / =（murlk.lib 与 deps.txt）
+#   · 第三方交付：预编译 C-ABI 二进制 + 契约；源语言不限；禁高层他语 API
+#   · 拉取链接：stdlib/registry/mirrors.mu（内置开源站≥12；没链接就不能拉）
+#   · 对外总索引：stdlib/registry/index.txt（一行一个 URL）
+#   · TEMP_EXTERNAL_OSS_EXAMPLE：贴外部开源站演示可他语，用完删
+#   · 规范：stdlib/libdev/契约.txt · 标准库闸：stdlib/eng/ffi/契约.txt
+
+══════════════════════════════════════════════════════════════
+安装 / 更新 / 卸载 / 校验（第三方独立库）
+══════════════════════════════════════════════════════════════
+
+mum install|i <name> [ver]       → 安装（含传递依赖；写 murlk.lock）
+mum install|i <dir>              → 从本地包目录安装
+mum update|upgrade [name]        → fetch 后按 index latest 更新
+mum uninstall|remove|rm <name>   → 卸载并摘锁
+mum verify [name]                → 校验锁内 sha256（省略=全部）
+mum deps                         → 安装当前项目 murlk.lib 依赖
+mum outdated                     → 已装 vs index latest
+
+══════════════════════════════════════════════════════════════
+第三方独立库作者（先读教科书）
+══════════════════════════════════════════════════════════════
+
+mum init <name> [ver]            → 骨架（契约/mod/meta/deps.txt/bin）
+mum publish [dir]                → 发布到本机 local-registry
+
+教科书：stdlib/libdev/教程-第三方独立库.txt
+模板：  stdlib/libdev/TEMPLATE/
+样例：  stdlib/registry/packages/hello_bin/0.1.0/
+
+══════════════════════════════════════════════════════════════
+索引 / 搜索 / 状态
+══════════════════════════════════════════════════════════════
+
+mum fetch                        → 拉总索引 index.txt，再按行拉各家（失败换源）
+mum refresh                      → 同 fetch（缓存策略后续可收紧）
+mum status                       → 索引/镜像/已装状态
+mum config                       → 路径与内置开源站数量
+mum search <query>               → 搜索第三方独立库
+mum list|ls                      → 已安装库
+mum info <name>                  → 库信息与契约
+
+══════════════════════════════════════════════════════════════
+mirror（拉取链接）
+══════════════════════════════════════════════════════════════
+
+mum mirror list|ls               → local + 内置开源站 + 用户追加
+mum mirror add <url>             → 追加总索引 txt 镜像（罕用；默认已内置）
+mum mirror remove|rm <url>       → 移除用户追加
+mum mirror update                → 强制更新总索引 txt
+
+权威：stdlib/registry/mirrors.mu（只指向 index.txt）
+别人发库：docs/guide/第三方独立库-自建仓发布.txt
+
+══════════════════════════════════════════════════════════════
+source / registry
+══════════════════════════════════════════════════════════════
+
+mum source|src list|ls
+mum source add <n> <owner> [plat] → 单库映射（路 C：名→作者平台）
+mum source remove|rm <name>
+mum registry | mum registry set <url> | mum registry show|get
+
+══════════════════════════════════════════════════════════════
+配置路径
+══════════════════════════════════════════════════════════════
+
+~/.murlk/hub-sources.txt  → 远程索引 URL（默认种入内置开源站）
+~/.murlk/lib-sources.txt    → 单库源
+~/.murlk/registry.txt       → 注册表 API（可选）
+~/.murlk/hub.txt          → 总索引缓存（一行一个 URL）
+~/.murlk/catalog.json       → 各家 JSON 合并元数据
+~/.murlk/cache/author-*.json→ 各作者索引分片
+~/.murlk/murlk.lock         → name version sha…
+~/.murlk/libs/              → 已安装的第三方独立库
+stdlib/registry/mirrors.mu  → 总索引 txt 的全网镜像
+stdlib/registry/index.txt   → 总索引编辑源
+
+环境：MURLK_HOME · MURLK_FRONTEND · MURLK_PLAT（覆盖平台 classifier）
+
+══════════════════════════════════════════════════════════════
+示例
+══════════════════════════════════════════════════════════════
+
+mum mirror list
+mum fetch
+mum search hello
+mum install hello_bin
+mum verify hello_bin
+mum list
+mum info hello_bin
+mum outdated
+
+# 第三方独立库（教科书第 3 章）
+mum init demo_lib 0.1.0
+cd demo_lib
+mum publish .
+mum install demo_lib
+mum verify demo_lib

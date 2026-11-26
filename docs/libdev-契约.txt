@@ -1,0 +1,17 @@
+# 契约 · stdlib/libdev
+# 职责：第三方独立库的开发/发布规范（非标准库本身）
+
+教程：stdlib/libdev/教程-第三方独立库.txt
+模板：stdlib/libdev/TEMPLATE/
+样例：stdlib/registry/packages/hello_bin/0.1.0/
+总索引源：stdlib/registry/index.txt
+链接镜像：stdlib/registry/mirrors.mu
+标准库调用闸：stdlib/eng/ffi/契约.txt
+
+钉死：
+  1) 标准库 = 语言自带，目录 stdlib/{eng,zh,bagua}/…
+  2) 第三方独立库 = 外部人员开发；经 mum；登记进公网总索引
+  3) 公网总仓只发 index.txt（一行一个 https URL）；不上语言源码
+  4) 用方默认只拉总索引 txt；不必为每个库改 mirror
+  5) 本仓 mum / 标准库实现只用 .mu
+  6) TEMP_EXTERNAL_OSS_EXAMPLE：贴外部开源站演示可他语；用完删
